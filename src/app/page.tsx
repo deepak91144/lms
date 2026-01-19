@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import Header from "../components/Header";
+import { getFileUrl } from "@/lib/utils";
 
 interface Course {
   _id: string;
@@ -104,7 +105,7 @@ export default function Home() {
                     <div className="relative h-48 w-full bg-slate-100 dark:bg-slate-800">
                       {course.image ? (
                           <img 
-                              src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}${course.image}`} 
+                              src={getFileUrl(course.image)} 
                               alt={course.title}
                               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                           />

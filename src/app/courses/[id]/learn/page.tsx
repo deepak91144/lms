@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useUser } from '@clerk/nextjs';
+import { getFileUrl } from '@/lib/utils';
 
 export default function CourseLearningPage() {
   const { id } = useParams();
@@ -417,7 +418,7 @@ export default function CourseLearningPage() {
                                      <div className="flex-1 min-h-[70vh] bg-black rounded-xl overflow-hidden shadow-lg relative">
                                         {activeChapter.content ? (
                                              <video 
-                                                src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}${activeChapter.content}`} 
+                                                src={getFileUrl(activeChapter.content)} 
                                                 controls 
                                                 className="w-full h-full object-contain"
                                                 autoPlay={false}
@@ -435,7 +436,7 @@ export default function CourseLearningPage() {
                                      <div className="flex-1 w-full h-full">
                                          {activeChapter.content ? (
                                              <iframe 
-                                                src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}${activeChapter.content}`} 
+                                                src={getFileUrl(activeChapter.content)} 
                                                 className="w-full h-full min-h-[80vh]"
                                                 title="PDF Viewer"
                                              />

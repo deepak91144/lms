@@ -3,6 +3,7 @@
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useConfirm } from '@/components/providers/ConfirmProvider';
+import { getFileUrl } from '@/lib/utils';
 
 export default function ManageCoursePage() {
   const params = useParams();
@@ -348,7 +349,7 @@ export default function ManageCoursePage() {
                                     />
                                 ) : course.image ? (
                                     <img 
-                                        src={`http://localhost:8000${course.image}`} 
+                                        src={getFileUrl(course.image)} 
                                         alt={course.title}
                                         className="w-full h-full object-cover"
                                     />
@@ -752,14 +753,14 @@ export default function ManageCoursePage() {
                       <p className="text-sm text-slate-600 dark:text-slate-400 mb-2">Current file:</p>
                       {editingChapter.type === 'video' ? (
                         <video 
-                            src={`http://localhost:8000${editingChapter.content}`} 
+                            src={getFileUrl(editingChapter.content)} 
                             controls 
                             className="w-full rounded-lg"
                         />
                       ) : (
                         <div className="flex items-center gap-2 text-blue-600">
                             <span>📄</span>
-                            <a href={`http://localhost:8000${editingChapter.content}`} target="_blank" rel="noopener noreferrer" className="underline">View current PDF</a>
+                            <a href={getFileUrl(editingChapter.content)} target="_blank" rel="noopener noreferrer" className="underline">View current PDF</a>
                         </div>
                       )}
                     </div>
