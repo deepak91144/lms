@@ -16,7 +16,7 @@ export default function CourseLearningPage() {
   const [syllabus, setSyllabus] = useState<any[]>([]);
   const [activeChapter, setActiveChapter] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
   const [completedChapters, setCompletedChapters] = useState<Set<string>>(new Set());
   
@@ -118,6 +118,7 @@ export default function CourseLearningPage() {
   // Handle Chapter Selection
   const handleChapterSelect = (chapter: any) => {
     setActiveChapter(chapter);
+    setSidebarOpen(false); // Close sidebar on mobile selection
     // Reset Quiz State
     setQuizAnswers({});
     setQuizSubmitted(false);
@@ -317,7 +318,15 @@ export default function CourseLearningPage() {
   }
 
   return (
-    <div className="flex h-screen bg-slate-50 overflow-hidden">
+    <div className="flex h-screen bg-slate-50 overflow-hidden relative">
+        {/* Mobile Sidebar Overlay */}
+        {sidebarOpen && (
+            <div 
+                className="fixed inset-0 z-20 bg-black/50 md:hidden transition-opacity backdrop-blur-sm"
+                onClick={() => setSidebarOpen(false)}
+            />
+        )}
+
         {/* Left Sidebar - Curriculum */}
         <div 
             className={`
@@ -326,13 +335,23 @@ export default function CourseLearningPage() {
                 md:relative md:translate-x-0
             `}
         >
-            <div className="h-16 flex items-center px-6 border-b border-slate-200 bg-slate-50">
+            {/* Sidebar Header */}
+            <div className="h-16 flex items-center justify-between px-6 border-b border-slate-200 bg-slate-50">
                 <Link href="/dashboard/student/courses" className="flex items-center text-slate-500 hover:text-slate-800 transition-colors">
                     <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                     </svg>
-                    Back to Dashboard
+                    <span className="text-sm font-medium">Back</span>
                 </Link>
+                {/* Mobile Close Button */}
+                <button 
+                    onClick={() => setSidebarOpen(false)}
+                    className="md:hidden p-2 -mr-2 text-slate-500 hover:text-slate-800"
+                >
+                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
             </div>
             
             <div className="h-[calc(100vh-4rem)] overflow-y-auto p-4 space-y-4">
@@ -415,7 +434,7 @@ export default function CourseLearningPage() {
                             {/* Actual Content Render */}
                             <div className="p-2 md:px-2 md:py-4 flex-1 flex flex-col min-h-0">
                                 {activeChapter.type === 'video' && (
-                                     <div className="flex-1 min-h-[70vh] bg-black rounded-xl overflow-hidden shadow-lg relative">
+                                     <div className="flex-1 w-full aspect-video md:aspect-auto md:min-h-[70vh] bg-black rounded-xl overflow-hidden shadow-lg relative">
                                         {activeChapter.content ? (
                                              <video 
                                                 src={getFileUrl(activeChapter.content)} 
@@ -433,11 +452,11 @@ export default function CourseLearningPage() {
                                 )}
 
                                 {activeChapter.type === 'pdf' && (
-                                     <div className="flex-1 w-full h-full">
+                                     <div className="flex-1 w-full h-full min-h-[50vh] md:min-h-0">
                                          {activeChapter.content ? (
                                              <iframe 
                                                 src={getFileUrl(activeChapter.content)} 
-                                                className="w-full h-full min-h-[80vh]"
+                                                className="w-full h-full min-h-[50vh] md:min-h-[80vh]"
                                                 title="PDF Viewer"
                                              />
                                          ) : (
