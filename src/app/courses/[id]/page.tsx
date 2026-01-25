@@ -12,6 +12,11 @@ export default function CourseDetailsPage() {
   const [course, setCourse] = useState<any>(null);
   const [syllabus, setSyllabus] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isEnrolled, setIsEnrolled] = useState(false);
+  const [userRating, setUserRating] = useState(0);
+  const [userFeedback, setUserFeedback] = useState('');
+  const [hoverRating, setHoverRating] = useState(0);
+  const [isSubmittingRating, setIsSubmittingRating] = useState(false);
 
   const handleStartLearning = () => {
     if (isSignedIn) {
@@ -42,7 +47,62 @@ export default function CourseDetailsPage() {
     };
 
     fetchData();
-  }, [id]);
+
+    // Check enrollment and rating if logged in
+    if (isSignedIn && id) {
+        const checkEnrollment = async () => {
+            try {
+                const token = await window.Clerk?.session?.getToken();
+                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/courses/${id}/progress`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    setIsEnrolled(true);
+                    // Fetch rating
+                    const ratingRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/courses/${id}/my-rating`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (ratingRes.ok) {
+                        const ratingData = await ratingRes.json();
+                        setUserRating(ratingData.rating || 0);
+                        setUserFeedback(ratingData.feedback || '');
+                    }
+                }
+            } catch (e) {
+                console.error("Error checking enrollment:", e);
+            }
+        };
+        checkEnrollment();
+    }
+  }, [id, isSignedIn]);
+
+  const submitRating = async (rating: number) => {
+      try {
+          setIsSubmittingRating(true);
+          const token = await window.Clerk?.session?.getToken();
+          const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/courses/${id}/rate`, {
+              method: 'POST',
+              headers: { 
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${token}` 
+              },
+              body: JSON.stringify({ rating, feedback: userFeedback })
+          });
+          
+          if (res.ok) {
+              const data = await res.json();
+              setUserRating(data.rating);
+              // Refresh course data to show updated avg
+              const courseRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/courses/${id}`);
+              const courseData = await courseRes.json();
+              setCourse(courseData);
+          }
+          setIsSubmittingRating(false);
+      } catch (e) {
+          console.error("Error submitting rating:", e);
+          setIsSubmittingRating(false);
+      }
+  };
 
   if (loading) {
     return (
@@ -141,6 +201,62 @@ export default function CourseDetailsPage() {
                     </a>
                 </div>
             </div>
+            
+            {/* Rating Section - Only for enrolled users */}
+            {isEnrolled && (
+                <div className="bg-white rounded-3xl p-8 md:p-12 shadow-sm border border-slate-100">
+                    <h2 className="text-2xl font-bold mb-6 text-slate-900">Rate this Course</h2>
+                    <div className="flex flex-col gap-4">
+                        <div className="flex items-center gap-2">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                                <button
+                                    key={star}
+                                    onMouseEnter={() => setHoverRating(star)}
+                                    onMouseLeave={() => setHoverRating(0)}
+                                    onClick={() => submitRating(star)}
+                                    className="focus:outline-none transition-transform hover:scale-110"
+                                >
+                                    <svg 
+                                        className={`w-10 h-10 ${
+                                            (hoverRating || userRating) >= star ? 'text-yellow-400' : 'text-slate-200'
+                                        }`} 
+                                        fill="currentColor" 
+                                        viewBox="0 0 20 20"
+                                    >
+                                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                    </svg>
+                                </button>
+                            ))}
+                            <span className="ml-4 text-slate-600 font-medium">
+                                {userRating > 0 ? `You rated: ${userRating} stars` : 'Select a rating'}
+                            </span>
+                        </div>
+                        
+                        <div className="mt-4">
+                            <label className="block text-sm font-medium text-slate-700 mb-2">
+                                Your Review (Optional)
+                            </label>
+                            <div className="flex gap-2">
+                                <textarea
+                                    value={userFeedback}
+                                    onChange={(e) => setUserFeedback(e.target.value)}
+                                    placeholder="Tell us what you thought about this course..."
+                                    className="w-full p-4 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none resize-none h-24"
+                                />
+                                {userFeedback && (
+                                    <button
+                                        onClick={() => submitRating(userRating)}
+                                        disabled={isSubmittingRating || userRating === 0}
+                                        className="px-6 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        {isSubmittingRating ? 'Saving...' : 'Save'}
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Syllabus Section */}
             <div id="syllabus" className="bg-white rounded-3xl p-8 md:p-12 shadow-sm border border-slate-100">
